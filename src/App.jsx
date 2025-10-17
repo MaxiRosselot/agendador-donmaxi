@@ -3,7 +3,11 @@ import React, { useEffect, useMemo, useState } from 'react'
 const CONFIG = {
   timezone: 'America/Santiago',
   business: { name: 'Repisas Don Maxi', notifyPhone: '+56944510560' },
-  logoUrl: '/logo.png'
+  logoUrl: '/logo.png',
+  endpoints: {
+    availability: '/.netlify/functions/get-availability',
+    createEvent: '/.netlify/functions/create_event', // ← coincide con la función ESM que te pasé
+  }
 }
 
 // ---------- Utils ----------
@@ -28,11 +32,11 @@ function nextFourSundays(){
   return sundays
 }
 
-// Slots de 30 min entre 09:00 y 16:00 (incluye 16:00)
+// Slots de 30 min entre 09:00 y 17:00 (incluye 17:00)
 function daySlots30m(){
   const out = []
   let h = 9, m = 0
-  while (h < 16 || (h === 16 && m === 0)){
+  while (h < 17 || (h === 17 && m === 0)){
     out.push(`${String(h).padStart(2,'0')}:${String(m).padStart(2,'0')}`)
     m += 30
     if (m >= 60){ h += 1; m = 0 }
@@ -81,9 +85,10 @@ export default function App(){
     const params = new URLSearchParams({
       date: selectedDateISO,
       tz: CONFIG.timezone,
+      mode: 'created-only',                 // ← bloquea exactamente lo tomado por tu app
       slots: baseSlots.join(',')
     })
-    fetch(`/.netlify/functions/get-availability?${params.toString()}`)
+    fetch(`${CONFIG.endpoints.availability}?${params.toString()}`)
       .then(r => r.json())
       .then(data => {
         if (data?.ok && data.availability) setAvailability(data.availability)
@@ -114,8 +119,8 @@ export default function App(){
       })
       if(!r1.ok) throw new Error('No se pudo guardar el formulario')
 
-      // 2) Calendar
-      const r2 = await fetch('/.netlify/functions/create-calendar-event',{
+      // 2) Calendar (usa tu función create_event ESM con TZ correcto y slot_key)
+      const r2 = await fetch(CONFIG.endpoints.createEvent,{
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
           nombre:form.nombre, apellido:form.apellido, email:form.email, celular:form.celular, direccion:form.direccion,
