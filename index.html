@@ -4,84 +4,113 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Agendador — Repisas Don Maxi</title>
-    <meta name="description" content="Agenda tu visita con Repisas Don Maxi — fechas seleccionadas, confirmación por correo y WhatsApp." />
+    <meta name="description" content="Agenda tu visita con Repisas Don Maxi — fechas seleccionadas, confirmación por correo." />
     <link rel="icon" href="/logo.png" />
 
-    <!-- Meta social opcional -->
     <meta property="og:title" content="Agendador — Repisas Don Maxi" />
     <meta property="og:description" content="Agenda tu visita en minutos. Fechas habilitadas, confirmación inmediata." />
     <meta property="og:image" content="/og-cover.png" />
     <meta name="theme-color" content="#FF931E" />
 
     <style>
-      /* ========== Design tokens ========== */
       :root{
-        --bg: #ffffff;
-        --surface: #ffffff;
-        --elev: 0 8px 24px rgba(0,0,0,.06);
-        --text: #0b1020;
-        --muted: #64748b;
-        --border: #e5e7eb;
-        --accent: #FF931E;
-        --accent-ink: #ffffff;
-        --ok: #16a34a;
-        --err: #ef4444;
-        --radius-xl: 18px;
-        --radius-lg: 14px;
-        --radius-md: 12px;
-        --safe-top: env(safe-area-inset-top);
-        --safe-bottom: env(safe-area-inset-bottom);
-        /* 🔒 Forzar modo claro */
-        color-scheme: only light;
+        --bg:#ffffff; --surface:#ffffff; --text:#0b1020; --muted:#64748b; --border:#e5e7eb; --accent:#FF931E; --accent-ink:#fff;
+        --elev:0 10px 28px rgba(0,0,0,.08);
+        --radius-xl:22px; --radius-lg:18px; --radius-md:12px;
+        --safe-top:env(safe-area-inset-top); --safe-bottom:env(safe-area-inset-bottom);
+        color-scheme: only light; /* 🔒 modo claro forzado */
       }
 
-      html,body,#root{ height:100% }
       *{ box-sizing:border-box }
-      body{ margin:0; color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif; background:var(--bg); -webkit-font-smoothing:antialiased; }
-      a{ color:inherit }
-      img{ display:block; max-width:100% }
-      button{ font:inherit }
-      .container{ max-width:960px; margin:0 auto; padding: clamp(14px,2.6vw,24px) clamp(14px,4vw,28px); }
+      html, body, #root{ height:100% }
+      body{
+        margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif;
+        color:var(--text); background:var(--bg);
+        -webkit-font-smoothing:antialiased;
+        /* fondo suave */
+        background-image:
+          radial-gradient(1200px 500px at 10% -10%, rgba(255,147,30,.06), transparent 60%),
+          radial-gradient(900px 400px at 90% 0%, rgba(255,147,30,.04), transparent 60%);
+      }
+      a{ color:inherit } img{ display:block; max-width:100% } button{ font:inherit }
 
-      .brand{ display:flex; align-items:center; gap: clamp(12px,1.8vw,18px); margin: max(6px, var(--safe-top)) 0 10px; }
+      .container{ max-width:1000px; margin:0 auto; padding: clamp(16px,3vw,28px) clamp(16px,4vw,32px) }
+
+      /* Hero superior centrado */
+      .hero{
+        display:grid; place-items:center; text-align:center; margin: max(8px,var(--safe-top)) 0 18px;
+      }
       .logo-wrap{
-        width: clamp(56px, 12vw, 84px);
-        height: clamp(56px, 12vw, 84px);
-        border-radius: 20px;
-        background: radial-gradient(120% 120% at 10% 10%, rgba(255,147,30,.25), rgba(255,147,30,.05));
+        width: clamp(84px, 12vw, 140px); /* ⬆️ más grande */
+        height: clamp(84px, 12vw, 140px);
+        border-radius: 28px;
+        background: radial-gradient(140% 140% at 20% 10%, rgba(255,147,30,.25), rgba(255,147,30,.05));
         display:grid; place-items:center; box-shadow: var(--elev);
         border: 1px solid var(--border);
+        margin-bottom: 12px;
       }
-      .logo{ width: 72%; height: 72%; object-fit: contain; border-radius: 12px }
-      .brand-text h1{ font-size: clamp(22px, 3.2vw, 30px); line-height:1.15; margin:0 0 4px; letter-spacing:.2px }
-      .brand-text p{ margin:0; color:var(--muted); font-size: clamp(12px,1.6vw,14px) }
+      .logo{ width: 78%; height: 78%; object-fit: contain; border-radius: 16px }
+      .hero h1{ font-size: clamp(22px, 3.6vw, 34px); line-height:1.15; margin: 6px 0 6px }
+      .hero p{ margin:0; color:var(--muted); font-size: clamp(13px,1.8vw,15px) }
 
-      .card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--elev); overflow:hidden }
-      .card > .card-head{ display:flex; align-items:center; justify-content:space-between; padding: clamp(14px,2.4vw,20px); border-bottom:1px solid var(--border); background: linear-gradient(180deg, rgba(255,147,30,.06), transparent); }
-      .card > .card-body{ padding: clamp(14px,2.4vw,20px) }
+      /* Shell principal */
+      .shell{
+        background:var(--surface); border:1px solid var(--border); border-radius: var(--radius-xl);
+        box-shadow: var(--elev); overflow:hidden;
+      }
+      .shell-head{ padding: clamp(14px,2.2vw,20px); border-bottom:1px solid var(--border); background:linear-gradient(180deg, rgba(255,147,30,.06), transparent) }
+      .shell-body{ padding: clamp(14px,2.6vw,22px) }
 
-      .steps{ display:flex; gap:10px; flex-wrap:wrap }
-      .step{ display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; border:1px solid var(--border); background:#fff0; font-weight:600; font-size:13px }
-      .step .dot{ width:8px; height:8px; border-radius:50%; background:var(--border) }
-      .step.active{ border-color: var(--accent); background: rgba(255,147,30,.09); color:#000 }
-      .step.active .dot{ background: var(--accent) }
+      /* Progreso (barra) */
+      .progress{
+        height: 6px; background:#fff; border:1px solid var(--border); border-radius:999px; overflow:hidden
+      }
+      .progress > .bar{
+        height:100%; width: 33%;
+        background: linear-gradient(90deg, #FF931E, #ffb86b);
+        border-right: 1px solid rgba(255,255,255,.6);
+        transition: width .25s ease;
+      }
+      .steps-line{ display:flex; justify-content:space-between; font-weight:700; font-size:12px; color:var(--muted); margin-top:8px }
 
-      .section-title{ font-size:14px; font-weight:800; letter-spacing:.2px; margin: 4px 0 10px; text-transform: uppercase; color: var(--muted) }
+      /* Info comercial */
+      .blurb{
+        margin:12px 0 18px; font-size:14px; color:var(--muted);
+        background: #fff; border:1px solid var(--border); border-radius: var(--radius-lg);
+        padding: 12px 14px;
+      }
+      .blurb strong{ color:#111; }
+
+      /* Secciones React (fechas, horas, formulario) las estilamos desde aquí para que se integren */
+      .section-title{ font-size:14px; font-weight:800; letter-spacing:.2px; margin: 10px 0 12px; text-transform: uppercase; color: var(--muted) }
+
       .dates{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px }
       @media(min-width:560px){ .dates{ grid-template-columns:repeat(4,1fr) } }
-      .date-btn{ border:1.5px solid var(--border); background:var(--surface); border-radius:16px; padding:14px 12px; cursor:pointer; text-align:center; font-weight:700; font-size:14px; transition:.2s transform, .2s box-shadow, .2s border-color }
+      .date-btn{
+        border:1.5px solid var(--border); background:#fff; border-radius:16px; padding:14px 12px;
+        cursor:pointer; text-align:center; font-weight:800; font-size:14px;
+        transition:.18s transform,.18s box-shadow,.18s border-color
+      }
       .date-btn:hover{ transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.06) }
       .date-btn.active{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); box-shadow:0 8px 22px rgba(255,147,30,.35) }
 
       .slots{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px }
-      .slot{ border:1.5px solid var(--border); background:var(--surface); border-radius:14px; padding:12px; text-align:center; cursor:pointer; font-weight:700; font-size:14px; transition:.2s transform, .2s box-shadow, .2s border-color }
+      @media(min-width:720px){ .slots{ grid-template-columns:repeat(6,1fr) } }
+      .slot{
+        border:1.5px solid var(--border); background:#fff; border-radius:14px; padding:10px 10px;
+        text-align:center; cursor:pointer; font-weight:800; font-size:13px;
+        transition:.18s transform,.18s box-shadow,.18s border-color
+      }
       .slot:hover{ transform: translateY(-1px); box-shadow:0 6px 18px rgba(0,0,0,.06) }
       .slot.active{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); box-shadow:0 8px 22px rgba(255,147,30,.3) }
 
       .grid{ display:grid; grid-template-columns:1fr; gap:12px }
       @media(min-width:760px){ .grid{ grid-template-columns:1fr 1fr } }
       label{ font-size:12px; color:var(--muted); display:block; margin-bottom:6px; font-weight:700; letter-spacing:.2px }
-      input, textarea{ width:100%; border:1.5px solid var(--border); border-radius:14px; padding:12px 14px; font-size:15px; background:var(--surface); color:var(--text); transition: .15s border-color, .15s box-shadow }
+      input, textarea{
+        width:100%; border:1.5px solid var(--border); border-radius:14px; padding:12px 14px; font-size:15px; background:#fff; color:var(--text);
+        transition: .15s border-color, .15s box-shadow
+      }
       input::placeholder, textarea::placeholder{ color:#9aa4b2 }
       input:focus, textarea:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 5px rgba(255,147,30,.15) }
 
@@ -90,59 +119,58 @@
       .btn[disabled]{ opacity:.6; cursor:not-allowed; box-shadow:none }
       .note{ font-size:12px; color:var(--muted); margin-top:8px }
 
-      footer{ text-align:center; margin: 20px 0 calc(12px + var(--safe-bottom)); font-size:12px; color:var(--muted) }
+      footer{ text-align:center; margin: 18px 0 calc(10px + var(--safe-bottom)); font-size:12px; color:var(--muted) }
     </style>
   </head>
   <body>
     <div class="container">
-      <header class="brand" aria-label="Repisas Don Maxi">
+      <!-- HERO -->
+      <header class="hero" aria-label="Repisas Don Maxi">
         <div class="logo-wrap" aria-hidden="true">
           <img class="logo" src="/logo.png" alt="Logo Repisas Don Maxi" />
         </div>
-        <div class="brand-text">
-          <h1>Agenda tu visita</h1>
-          <p>Fechas habilitadas • Confirmación por correo</p>
-        </div>
+        <h1>Agenda tu visita</h1>
+        <p>Fechas habilitadas • Confirmación por correo</p>
       </header>
 
-      <section class="card" style="margin: 12px 0;">
-        <div class="card-body">
-          <p style="margin:0; font-size:14px; color:var(--muted)">
-            <strong>Agenda tu visita con un especialista</strong> para que tome las medidas y coticemos tus repisas de madera a medida.
-            La duración de la visita es de <strong>15 minutos</strong>.
-          </p>
-        </div>
-      </section>
-
-      <main class="card" role="region" aria-labelledby="agenda-title">
-        <div class="card-head">
-          <div id="agenda-title" class="steps" aria-label="Pasos del agendador">
-            <div class="step active"><span class="dot"></span> Fecha</div>
-            <div class="step"><span class="dot"></span> Hora</div>
-            <div class="step"><span class="dot"></span> Datos</div>
+      <!-- CONTENEDOR PRINCIPAL -->
+      <section class="shell" role="region" aria-labelledby="agenda-title">
+        <div class="shell-head">
+          <div class="progress" aria-hidden="true">
+            <div class="bar" id="progress-bar" style="width:33%"></div>
+          </div>
+          <div class="steps-line" id="steps-line">
+            <span>Fecha</span><span>Hora</span><span>Datos</span>
           </div>
         </div>
 
-        <div class="card-body">
+        <div class="shell-body">
+          <!-- Intro comercial -->
+          <div class="blurb">
+            <strong>Agenda tu visita con un especialista</strong> para que tome las medidas y coticemos tus repisas de madera a medida.
+            La duración de la visita es de <strong>15 minutos</strong>.
+          </div>
+
+          <!-- React montará aquí tu App.jsx -->
           <div id="root"></div>
+
+          <!-- Fallback message -->
           <noscript>
             <p style="color:var(--muted); font-size:14px">
               Para agendar necesitas habilitar JavaScript.
             </p>
           </noscript>
         </div>
-      </main>
+      </section>
 
-      <footer>
-        © <span id="year"></span> Repisas Don Maxi — Todos los derechos reservados
-      </footer>
+      <footer>© <span id="year"></span> Repisas Don Maxi — Todos los derechos reservados</footer>
     </div>
 
     <script>
       document.getElementById('year').textContent = new Date().getFullYear()
     </script>
 
-    <!-- Form oculto para Netlify Forms -->
+    <!-- Netlify Forms (respaldo) -->
     <form name="agendador" action="/" data-netlify="true" netlify-honeypot="bot-field" hidden>
       <input type="hidden" name="form-name" value="agendador" />
       <input type="text" name="nombre" />
