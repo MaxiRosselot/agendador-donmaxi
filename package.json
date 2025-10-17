@@ -1,0 +1,23 @@
+{
+  "name": "agendador-donmaxi",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "netlify:dev": "netlify dev",
+    "netlify:build": "netlify build",
+    "netlify:deploy": "netlify deploy --prod"
+  },
+  "dependencies": {
+    "googleapis": "^140.0.1",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.3.1",
+    "vite": "^5.4.8"
+  }
+}

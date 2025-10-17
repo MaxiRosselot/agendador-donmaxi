@@ -1,0 +1,34 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+  functions = "netlify/functions"
+
+# Páginas estáticas que no deben ir al SPA
+[[redirects]]
+  from = "/confirm.html"
+  to = "/confirm.html"
+  status = 200
+
+# URL linda sin .html (opcional)
+[[redirects]]
+  from = "/confirm"
+  to = "/confirm.html"
+  status = 200
+
+# Catch-all del SPA (al final)
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
+
+[functions]
+  node_bundler = "esbuild"
+  external_node_modules = ["googleapis"]
+
+[[headers]]
+  for = "/*"
+  [headers.values]
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"
+    X-Frame-Options = "DENY"
+    Permissions-Policy = "geolocation=()"

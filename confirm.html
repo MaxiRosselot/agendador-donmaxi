@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <title>Visita agendada — Repisas Don Maxi</title>
+    <meta name="description" content="Confirmación de visita agendada con Repisas Don Maxi." />
+    <link rel="icon" href="/logo.png" />
+    <meta name="theme-color" content="#FF931E" />
+    <style>
+      :root{
+        --bg:#ffffff; --surface:#ffffff; --text:#0b1020; --muted:#64748b; --border:#e5e7eb; --accent:#FF931E; --accent-ink:#fff;
+        --elev:0 8px 24px rgba(0,0,0,.06); --radius-xl:18px;
+        /* 🔒 Forzar modo claro */
+        color-scheme: only light;
+      }
+      *{ box-sizing:border-box }
+      body{ margin:0; font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif; color:var(--text); background:var(--bg) }
+      .container{ max-width:760px; margin:0 auto; padding: clamp(14px,2.6vw,24px) clamp(14px,4vw,28px); }
+      .card{ background:var(--surface); border:1px solid var(--border); border-radius:var(--radius-xl); box-shadow:var(--elev); overflow:hidden }
+      .card-body{ padding: clamp(16px,2.6vw,24px) }
+      .brand{ display:flex; align-items:center; gap:14px; margin: 8px 0 16px; }
+      .logo-wrap{ width:64px; height:64px; border:1px solid var(--border); border-radius:20px; display:grid; place-items:center; box-shadow:var(--elev) }
+      .logo{ width:72%; height:72%; object-fit:contain; border-radius:12px }
+      h1{ margin:8px 0 2px; font-size: clamp(22px, 3vw, 28px) }
+      p{ margin: 6px 0; color: var(--muted) }
+      .row{ display:grid; gap:8px; margin-top: 8px; }
+      .pill{ display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border:1px solid var(--border); border-radius:999px; background: rgba(255,147,30,.06); font-weight:700; }
+      .btn{ background:var(--accent); color:var(--accent-ink); border:none; border-radius:16px; padding:14px 18px; cursor:pointer; font-weight:900; font-size:15px; width:100%; min-height:52px; box-shadow:0 10px 24px rgba(255,147,30,.35); transition:.15s transform,.15s box-shadow; margin-top:10px }
+      .btn:hover{ transform: translateY(-1px); box-shadow:0 14px 28px rgba(255,147,30,.42) }
+      .ghost{ background:transparent; color:var(--text); border:1.5px solid var(--border); }
+      .note{ font-size:12px; color:var(--muted); margin-top:8px }
+      footer{ text-align:center; margin: 20px 0; font-size:12px; color:var(--muted) }
+      .ok{ color:#065f46; background:#d1fae5; border:1px solid #a7f3d0; padding:10px 12px; border-radius:12px; font-weight:700; }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <header class="brand" aria-label="Repisas Don Maxi">
+        <div class="logo-wrap" aria-hidden="true">
+          <img class="logo" src="/logo.png" alt="Logo Repisas Don Maxi" />
+        </div>
+        <div>
+          <h1>Visita agendada</h1>
+          <p>Gracias por coordinar con Repisas Don Maxi</p>
+        </div>
+      </header>
+
+      <main class="card">
+        <div class="card-body">
+          <div class="ok" id="ok-msg" role="status" aria-live="polite">✅ ¡Tu visita fue agendada!</div>
+
+          <div class="row">
+            <div class="pill" id="pill-fecha">📅 Fecha: —</div>
+            <div class="pill" id="pill-hora">⏰ Hora: —</div>
+            <div class="pill" id="pill-email">✉️ Confirmación enviada a: —</div>
+          </div>
+
+          <p class="note" style="margin-top:12px">
+            Un especialista asistirá para tomar medidas y coticemos tus repisas de madera a medida. La visita dura <strong>15 minutos</strong>.
+          </p>
+
+          <button class="btn" id="btn-wa">Confirmar por WhatsApp</button>
+          <button class="btn ghost" id="btn-volver">Volver al inicio</button>
+
+          <p class="note">Al confirmar por WhatsApp podrás coordinar detalles finos como estacionamiento o portería.</p>
+        </div>
+      </main>
+
+      <footer>© <span id="year"></span> Repisas Don Maxi</footer>
+    </div>
+
+    <script>
+      // Año
+      document.getElementById('year').textContent = new Date().getFullYear()
+
+      // Leer parámetros ?date=YYYY-MM-DD&time=HH:mm&email=...
+      const params = new URLSearchParams(location.search)
+      const dateISO = params.get('date') || ''
+      const timeHHmm = params.get('time') || ''
+      const email = params.get('email') || ''
+
+      // Formateos
+      function parseLocalDate(iso){ const [y,m,d]=iso.split('-').map(Number); return new Date(y,(m??1)-1,d??1) }
+      function prettyDate(date){ try{ return new Intl.DateTimeFormat('es-CL',{dateStyle:'full'}).format(date) }catch{ return date.toISOString().slice(0,10) } }
+      function isValidTime(s){ return /^\d{2}:\d{2}$/.test(s) }
+
+      // Pintar datos
+      const fechaTxt = dateISO ? prettyDate(parseLocalDate(dateISO)) : '—'
+      const horaTxt = isValidTime(timeHHmm) ? timeHHmm : '—'
+      const mailTxt = email || '—'
+
+      document.getElementById('pill-fecha').textContent = `📅 Fecha: ${fechaTxt}`
+      document.getElementById('pill-hora').textContent = `⏰ Hora: ${horaTxt}`
+      document.getElementById('pill-email').textContent = `✉️ Confirmación enviada a: ${mailTxt}`
+
+      // Botón WhatsApp (no se abre automáticamente)
+      const BUSINESS_PHONE = '+56944510560'
+      function openWhatsAppNotify(){
+        const to = BUSINESS_PHONE.replace(/[^\d]/g,'')
+        const msg = encodeURIComponent(`Hola Maxi! Agendé una visita para el ${fechaTxt} a las ${horaTxt}. ¿Algo que deba considerar?`)
+        window.open(`https://wa.me/${to}?text=${msg}`, '_blank')
+      }
+      document.getElementById('btn-wa').addEventListener('click', openWhatsAppNotify)
+
+      // Volver
+      document.getElementById('btn-volver').addEventListener('click', () => {
+        window.location.href = '/'
+      })
+    </script>
+  </body>
+</html>
