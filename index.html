@@ -20,7 +20,7 @@
         --surface: #ffffff;
         --elev: 0 8px 24px rgba(0,0,0,.06);
         --text: #0b1020;
-        --muted: #64748b; /* slate-500 */
+        --muted: #64748b;
         --border: #e5e7eb;
         --accent: #FF931E;
         --accent-ink: #ffffff;
@@ -31,11 +31,10 @@
         --radius-md: 12px;
         --safe-top: env(safe-area-inset-top);
         --safe-bottom: env(safe-area-inset-bottom);
-        /* 🔒 Forzar modo claro para todo (controles nativos, etc.) */
+        /* 🔒 Forzar modo claro */
         color-scheme: only light;
       }
 
-      /* ========== Base ========== */
       html,body,#root{ height:100% }
       *{ box-sizing:border-box }
       body{ margin:0; color:var(--text); font-family:Inter,system-ui,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,sans-serif; background:var(--bg); -webkit-font-smoothing:antialiased; }
@@ -44,7 +43,6 @@
       button{ font:inherit }
       .container{ max-width:960px; margin:0 auto; padding: clamp(14px,2.6vw,24px) clamp(14px,4vw,28px); }
 
-      /* ========== Brand header ========== */
       .brand{ display:flex; align-items:center; gap: clamp(12px,1.8vw,18px); margin: max(6px, var(--safe-top)) 0 10px; }
       .logo-wrap{
         width: clamp(56px, 12vw, 84px);
@@ -58,19 +56,16 @@
       .brand-text h1{ font-size: clamp(22px, 3.2vw, 30px); line-height:1.15; margin:0 0 4px; letter-spacing:.2px }
       .brand-text p{ margin:0; color:var(--muted); font-size: clamp(12px,1.6vw,14px) }
 
-      /* ========== Card shell ========== */
       .card{ background:var(--surface); border:1px solid var(--border); border-radius: var(--radius-xl); box-shadow: var(--elev); overflow:hidden }
       .card > .card-head{ display:flex; align-items:center; justify-content:space-between; padding: clamp(14px,2.4vw,20px); border-bottom:1px solid var(--border); background: linear-gradient(180deg, rgba(255,147,30,.06), transparent); }
       .card > .card-body{ padding: clamp(14px,2.4vw,20px) }
 
-      /* ========== Stepper ========== */
       .steps{ display:flex; gap:10px; flex-wrap:wrap }
       .step{ display:flex; align-items:center; gap:8px; padding:8px 12px; border-radius:999px; border:1px solid var(--border); background:#fff0; font-weight:600; font-size:13px }
       .step .dot{ width:8px; height:8px; border-radius:50%; background:var(--border) }
       .step.active{ border-color: var(--accent); background: rgba(255,147,30,.09); color:#000 }
       .step.active .dot{ background: var(--accent) }
 
-      /* ========== Date grid ========== */
       .section-title{ font-size:14px; font-weight:800; letter-spacing:.2px; margin: 4px 0 10px; text-transform: uppercase; color: var(--muted) }
       .dates{ display:grid; grid-template-columns:repeat(2,1fr); gap:10px }
       @media(min-width:560px){ .dates{ grid-template-columns:repeat(4,1fr) } }
@@ -78,13 +73,11 @@
       .date-btn:hover{ transform: translateY(-1px); box-shadow: 0 6px 18px rgba(0,0,0,.06) }
       .date-btn.active{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); box-shadow:0 8px 22px rgba(255,147,30,.35) }
 
-      /* ========== Slots (hours) ========== */
       .slots{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px }
       .slot{ border:1.5px solid var(--border); background:var(--surface); border-radius:14px; padding:12px; text-align:center; cursor:pointer; font-weight:700; font-size:14px; transition:.2s transform, .2s box-shadow, .2s border-color }
       .slot:hover{ transform: translateY(-1px); box-shadow:0 6px 18px rgba(0,0,0,.06) }
       .slot.active{ background:var(--accent); color:var(--accent-ink); border-color:var(--accent); box-shadow:0 8px 22px rgba(255,147,30,.3) }
 
-      /* ========== Form ========== */
       .grid{ display:grid; grid-template-columns:1fr; gap:12px }
       @media(min-width:760px){ .grid{ grid-template-columns:1fr 1fr } }
       label{ font-size:12px; color:var(--muted); display:block; margin-bottom:6px; font-weight:700; letter-spacing:.2px }
@@ -92,25 +85,12 @@
       input::placeholder, textarea::placeholder{ color:#9aa4b2 }
       input:focus, textarea:focus{ outline:none; border-color:var(--accent); box-shadow:0 0 0 5px rgba(255,147,30,.15) }
 
-      /* ========== Sticky submit (mobile) ========== */
-      .sticky-cta{ position: sticky; bottom: 0; padding: 12px; background: linear-gradient(180deg, transparent, rgba(255,255,255,.85) 35%, rgba(255,255,255,1) 80%); backdrop-filter: blur(6px); border-top:1px solid var(--border); margin-top: 4px }
       .btn{ background:var(--accent); color:#fff; border:none; border-radius:16px; padding:14px 18px; cursor:pointer; font-weight:900; font-size:15px; width:100%; min-height:52px; box-shadow:0 10px 24px rgba(255,147,30,.35); transition:.15s transform, .15s box-shadow }
       .btn:hover{ transform: translateY(-1px); box-shadow:0 14px 28px rgba(255,147,30,.42) }
       .btn[disabled]{ opacity:.6; cursor:not-allowed; box-shadow:none }
       .note{ font-size:12px; color:var(--muted); margin-top:8px }
 
-      /* ========== Toasts ========== */
-      .toast{ display:none; margin-top:12px; padding:10px 12px; border-radius:12px; font-weight:700 }
-      .toast.ok{ display:block; color:#065f46; background:#d1fae5; border:1px solid #a7f3d0 }
-      .toast.err{ display:block; color:#7f1d1d; background:#fee2e2; border:1px solid #fecaca }
-
-      /* ========== Footer ========== */
       footer{ text-align:center; margin: 20px 0 calc(12px + var(--safe-bottom)); font-size:12px; color:var(--muted) }
-
-      /* Motion respect */
-      @media (prefers-reduced-motion: reduce){
-        .date-btn,.slot,.btn{ transition:none }
-      }
     </style>
   </head>
   <body>
@@ -125,7 +105,6 @@
         </div>
       </header>
 
-      <!-- ✨ Intro comercial -->
       <section class="card" style="margin: 12px 0;">
         <div class="card-body">
           <p style="margin:0; font-size:14px; color:var(--muted)">
@@ -145,23 +124,12 @@
         </div>
 
         <div class="card-body">
-          <!-- React montará aquí tu App.jsx -->
           <div id="root"></div>
-
-          <!-- Fallback message por si falla JS -->
           <noscript>
             <p style="color:var(--muted); font-size:14px">
               Para agendar necesitas habilitar JavaScript.
             </p>
           </noscript>
-        </div>
-
-        <div class="sticky-cta">
-          <!-- El botón real lo renderiza React; este contenedor deja el espacio fijo en mobile -->
-          <button class="btn" disabled aria-disabled="true">Completa los pasos para confirmar</button>
-          <p class="note">Se enviará confirmación inmediata al correo ingresado.</p>
-          <div class="toast" id="toast-ok">✅ ¡Reserva creada!</div>
-          <div class="toast" id="toast-err">❌ Ocurrió un error. Intenta de nuevo.</div>
         </div>
       </main>
 
@@ -171,7 +139,6 @@
     </div>
 
     <script>
-      // año dinámico sin depender del bundle
       document.getElementById('year').textContent = new Date().getFullYear()
     </script>
 
@@ -188,7 +155,6 @@
       <textarea name="comentarios"></textarea>
     </form>
 
-    <!-- Tu bundle de React (la lógica de slots y disponibilidad vive en /src) -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

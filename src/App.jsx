@@ -260,7 +260,8 @@ export default function App(){
                   {submitting ? 'Agendando…' : (loadingAvail ? 'Esperando disponibilidad…' : 'Agendar visita (15 min)')}
                 </button>
                 <p className="note">
-                  Se guardará en Netlify, se creará el evento en Google Calendar y luego verás la confirmación.
+                  Al agendar recibirás una invitación directamente en tu correo.
+                  Por favor asegúrate de haberlo escrito correctamente antes de confirmar.
                 </p>
               </div>
 
