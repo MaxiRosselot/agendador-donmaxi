@@ -42,7 +42,6 @@
 
       .container{ max-width:880px; margin:0 auto; padding: clamp(16px,3vw,28px) clamp(16px,4vw,32px); }
 
-      /* Hero */
       .hero{
         display:grid; place-items:center; text-align:center; margin: max(10px,env(safe-area-inset-top)) 0 18px;
       }
@@ -60,7 +59,6 @@
       .hero h1{ font-size: clamp(22px, 3.6vw, 34px); margin:6px 0 6px }
       .hero p{ margin:0; color:var(--muted); font-size: clamp(13px,1.8vw,15px) }
 
-      /* Card */
       .card{
         background:var(--surface);
         border:1px solid var(--border);
@@ -97,7 +95,7 @@
       .note{ font-size:13px; color:var(--muted); margin-top:10px; text-align:center; }
 
       .btn{
-        display:inline-flex; align-items:center; justify-content:center; text-decoration:none;
+        display:inline-flex; align-items:center; justify-content:center;
         background:var(--accent);
         color:var(--accent-ink);
         border:none;
@@ -150,16 +148,9 @@
           La visita tiene una duración estimada de <strong>15 minutos</strong>.
         </p>
 
-        <!-- Enlace seguro a WhatsApp -->
-        <a class="btn" id="btn-wa" href="#" target="_blank" rel="noopener noreferrer nofollow">
-          Confirmar por WhatsApp
-        </a>
-
-        <button class="btn ghost" id="btn-volver" type="button" aria-label="Volver al inicio">Volver al inicio</button>
-
-        <p class="note">
-          Al confirmar por WhatsApp podrás coordinar detalles como acceso, estacionamiento o portería.
-        </p>
+        <button class="btn ghost" id="btn-volver" type="button" aria-label="Volver al inicio">
+          Volver al inicio
+        </button>
       </main>
 
       <footer>© <span id="year"></span> Repisas Don Maxi — Todos los derechos reservados</footer>
@@ -197,16 +188,6 @@
       document.getElementById('pill-fecha').textContent = `📅 Fecha: ${fechaTxt}`
       document.getElementById('pill-hora').textContent  = `⏰ Hora: ${horaTxt}`
       document.getElementById('pill-email').textContent = `✉️ Confirmación enviada a: ${mailTxt}`
-
-      // WhatsApp (enlace seguro sin window.open)
-      const BUSINESS_PHONE = '+56944510560'
-      function buildWhatsAppHref(){
-        const to  = BUSINESS_PHONE.replace(/[^\d]/g,'')
-        const msg = encodeURIComponent(`Hola Maxi 👋 Agendé una visita para el ${fechaTxt} a las ${horaTxt}. ¿Algo que deba considerar?`)
-        return `https://wa.me/${to}?text=${msg}`
-      }
-      const waLink = document.getElementById('btn-wa')
-      waLink.setAttribute('href', buildWhatsAppHref())
 
       // Volver al inicio
       document.getElementById('btn-volver').addEventListener('click', () => {
