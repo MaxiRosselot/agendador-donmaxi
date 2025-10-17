@@ -5,7 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <title>Visita agendada — Repisas Don Maxi</title>
     <meta name="description" content="Confirmación de visita agendada con Repisas Don Maxi." />
+    <meta name="robots" content="noindex,nofollow,max-snippet:0" />
     <link rel="icon" href="/logo.png" />
+
     <meta property="og:title" content="Visita agendada — Repisas Don Maxi" />
     <meta property="og:description" content="Tu visita fue agendada exitosamente. Recibirás la confirmación en tu correo." />
     <meta property="og:image" content="/og-cover.png" />
@@ -95,6 +97,7 @@
       .note{ font-size:13px; color:var(--muted); margin-top:10px; text-align:center; }
 
       .btn{
+        display:inline-flex; align-items:center; justify-content:center; text-decoration:none;
         background:var(--accent);
         color:var(--accent-ink);
         border:none;
@@ -147,8 +150,12 @@
           La visita tiene una duración estimada de <strong>15 minutos</strong>.
         </p>
 
-        <button class="btn" id="btn-wa">Confirmar por WhatsApp</button>
-        <button class="btn ghost" id="btn-volver">Volver al inicio</button>
+        <!-- Enlace seguro a WhatsApp -->
+        <a class="btn" id="btn-wa" href="#" target="_blank" rel="noopener noreferrer nofollow">
+          Confirmar por WhatsApp
+        </a>
+
+        <button class="btn ghost" id="btn-volver" type="button" aria-label="Volver al inicio">Volver al inicio</button>
 
         <p class="note">
           Al confirmar por WhatsApp podrás coordinar detalles como acceso, estacionamiento o portería.
@@ -168,27 +175,38 @@
       const timeHHmm = params.get('time') || ''
       const email = params.get('email') || ''
 
-      // Formateos
-      function parseLocalDate(iso){ const [y,m,d]=iso.split('-').map(Number); return new Date(y,(m??1)-1,d??1) }
-      function prettyDate(date){ try{ return new Intl.DateTimeFormat('es-CL',{dateStyle:'full'}).format(date) }catch{ return date.toISOString().slice(0,10) } }
+      // Validaciones y formateos
+      function isValidDateISO(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s) }
+      function parseLocalDate(iso){
+        const [y,m,d]=iso.split('-').map(Number)
+        return new Date(y,(m??1)-1,d??1)
+      }
+      function prettyDate(date){
+        try{
+          return new Intl.DateTimeFormat('es-CL',{dateStyle:'full'}).format(date)
+        }catch{
+          return date.toISOString().slice(0,10)
+        }
+      }
       function isValidTime(s){ return /^\d{2}:\d{2}$/.test(s) }
 
-      const fechaTxt = dateISO ? prettyDate(parseLocalDate(dateISO)) : '—'
-      const horaTxt = isValidTime(timeHHmm) ? timeHHmm : '—'
-      const mailTxt = email || '—'
+      const fechaTxt = isValidDateISO(dateISO) ? prettyDate(parseLocalDate(dateISO)) : '—'
+      const horaTxt  = isValidTime(timeHHmm) ? timeHHmm : '—'
+      const mailTxt  = email || '—'
 
       document.getElementById('pill-fecha').textContent = `📅 Fecha: ${fechaTxt}`
-      document.getElementById('pill-hora').textContent = `⏰ Hora: ${horaTxt}`
+      document.getElementById('pill-hora').textContent  = `⏰ Hora: ${horaTxt}`
       document.getElementById('pill-email').textContent = `✉️ Confirmación enviada a: ${mailTxt}`
 
-      // WhatsApp (solo manual)
+      // WhatsApp (enlace seguro sin window.open)
       const BUSINESS_PHONE = '+56944510560'
-      function openWhatsAppNotify(){
-        const to = BUSINESS_PHONE.replace(/[^\d]/g,'')
+      function buildWhatsAppHref(){
+        const to  = BUSINESS_PHONE.replace(/[^\d]/g,'')
         const msg = encodeURIComponent(`Hola Maxi 👋 Agendé una visita para el ${fechaTxt} a las ${horaTxt}. ¿Algo que deba considerar?`)
-        window.open(`https://wa.me/${to}?text=${msg}`, '_blank','noopener,noreferrer')
+        return `https://wa.me/${to}?text=${msg}`
       }
-      document.getElementById('btn-wa').addEventListener('click', openWhatsAppNotify)
+      const waLink = document.getElementById('btn-wa')
+      waLink.setAttribute('href', buildWhatsAppHref())
 
       // Volver al inicio
       document.getElementById('btn-volver').addEventListener('click', () => {
