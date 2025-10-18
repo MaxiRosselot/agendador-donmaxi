@@ -107,11 +107,12 @@
         width:100%;
         min-height:52px;
         box-shadow:0 10px 24px rgba(255,147,30,.35);
-        transition:.15s transform,.15s box-shadow;
+        transition:.15s transform,.15s box-shadow,.15s opacity;
         margin-top:12px;
       }
       .btn:hover{ transform:translateY(-1px); box-shadow:0 14px 28px rgba(255,147,30,.42); }
       .btn.ghost{ background:transparent; color:var(--text); border:1.5px solid var(--border); box-shadow:none; }
+      .btn[disabled]{ opacity:.55; cursor:not-allowed; transform:none; box-shadow:none; }
 
       footer{
         text-align:center;
@@ -148,6 +149,11 @@
           La visita tiene una duración estimada de <strong>15 minutos</strong>.
         </p>
 
+        <!-- Botón WhatsApp -->
+        <button class="btn" id="btn-whatsapp" type="button" aria-label="Confirmar por WhatsApp">
+          💬 Confirmar por WhatsApp
+        </button>
+
         <button class="btn ghost" id="btn-volver" type="button" aria-label="Volver al inicio">
           Volver al inicio
         </button>
@@ -157,42 +163,94 @@
     </div>
 
     <script>
+      // Config
+      const WHATSAPP_NUMBER_E164 = '+56944510560'; // destino
+      const WHATSAPP_WA_ME = 'https://wa.me/';     // base
+
       // Año
-      document.getElementById('year').textContent = new Date().getFullYear()
+      document.getElementById('year').textContent = new Date().getFullYear();
 
       // Parámetros ?date=YYYY-MM-DD&time=HH:mm&email=...
-      const params = new URLSearchParams(location.search)
-      const dateISO = params.get('date') || ''
-      const timeHHmm = params.get('time') || ''
-      const email = params.get('email') || ''
+      const params   = new URLSearchParams(location.search);
+      const dateISO  = params.get('date')  || '';
+      const timeHHmm = params.get('time')  || '';
+      const email    = params.get('email') || '';
 
       // Validaciones y formateos
-      function isValidDateISO(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s) }
+      function isValidDateISO(s){ return /^\d{4}-\d{2}-\d{2}$/.test(s); }
       function parseLocalDate(iso){
-        const [y,m,d]=iso.split('-').map(Number)
-        return new Date(y,(m??1)-1,d??1)
+        const [y,m,d]=iso.split('-').map(Number);
+        return new Date(y,(m??1)-1,d??1);
       }
       function prettyDate(date){
         try{
-          return new Intl.DateTimeFormat('es-CL',{dateStyle:'full'}).format(date)
+          return new Intl.DateTimeFormat('es-CL',{dateStyle:'full'}).format(date);
         }catch{
-          return date.toISOString().slice(0,10)
+          return date.toISOString().slice(0,10);
         }
       }
-      function isValidTime(s){ return /^\d{2}:\d{2}$/.test(s) }
+      function isValidTime(s){ return /^\d{2}:\d{2}$/.test(s); }
 
-      const fechaTxt = isValidDateISO(dateISO) ? prettyDate(parseLocalDate(dateISO)) : '—'
-      const horaTxt  = isValidTime(timeHHmm) ? timeHHmm : '—'
-      const mailTxt  = email || '—'
+      const fechaTxt = isValidDateISO(dateISO) ? prettyDate(parseLocalDate(dateISO)) : '—';
+      const horaTxt  = isValidTime(timeHHmm) ? timeHHmm : '—';
+      const mailTxt  = email || '—';
 
-      document.getElementById('pill-fecha').textContent = `📅 Fecha: ${fechaTxt}`
-      document.getElementById('pill-hora').textContent  = `⏰ Hora: ${horaTxt}`
-      document.getElementById('pill-email').textContent = `✉️ Confirmación enviada a: ${mailTxt}`
+      document.getElementById('pill-fecha').textContent = `📅 Fecha: ${fechaTxt}`;
+      document.getElementById('pill-hora').textContent  = `⏰ Hora: ${horaTxt}`;
+      document.getElementById('pill-email').textContent = `✉️ Confirmación enviada a: ${mailTxt}`;
+
+      // Clave única para "usar una vez"
+      const onceKey = `whatsappConfirm:${dateISO}_${timeHHmm}_${email}`; // misma visita => misma clave
+
+      const $btnWA   = document.getElementById('btn-whatsapp');
+      const $btnBack = document.getElementById('btn-volver');
+
+      // Si ya se usó antes para esta reserva, deshabilitar botón
+      if (localStorage.getItem(onceKey) === 'sent') {
+        $btnWA.textContent = '✅ Confirmación enviada por WhatsApp';
+        $btnWA.setAttribute('disabled', 'true');
+      }
+
+      // Construye el texto para WhatsApp
+      function buildWhatsAppText(){
+        const lines = [
+          'Hola, soy cliente de *Repisas Don Maxi* 👋',
+          `Acabo de agendar una *visita sin costo* para el *${fechaTxt}* a las *${horaTxt}*.`,
+          email ? `Correo de contacto: *${email}*` : null,
+          `Referencia de reserva: ${dateISO || 's/d'} ${timeHHmm || 's/h'}`,
+          '',
+          '¿Pueden confirmar por favor? ¡Gracias!'
+        ].filter(Boolean);
+        return lines.join('\n');
+      }
+
+      // Normaliza número E.164 -> wa.me (sin +, sin espacios)
+      function normalizeForWaMe(e164){
+        return (e164 || '').replace(/[^\d]/g,''); // deja solo dígitos
+      }
+
+      // Click WhatsApp
+      $btnWA.addEventListener('click', () => {
+        // Si faltan datos mínimos, igual dejamos mandar un mensaje genérico
+        const text = buildWhatsAppText();
+        const phone = normalizeForWaMe(WHATSAPP_NUMBER_E164);
+        const url = `${WHATSAPP_WA_ME}${phone}?text=${encodeURIComponent(text)}`;
+
+        // Abrir en pestaña nueva (web o app según dispositivo)
+        window.open(url, '_blank', 'noopener,noreferrer');
+
+        // Marcar como usado-una-vez y deshabilitar
+        try {
+          localStorage.setItem(onceKey, 'sent');
+        } catch {}
+        $btnWA.textContent = '✅ Confirmación enviada por WhatsApp';
+        $btnWA.setAttribute('disabled','true');
+      });
 
       // Volver al inicio
-      document.getElementById('btn-volver').addEventListener('click', () => {
-        window.location.href = '/'
-      })
+      $btnBack.addEventListener('click', () => {
+        window.location.href = '/';
+      });
     </script>
   </body>
 </html>
