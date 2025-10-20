@@ -6,7 +6,7 @@ const CONFIG = {
   logoUrl: '/logo.png',
   endpoints: {
     availability: '/.netlify/functions/get-availability',
-    createEvent: '/.netlify/functions/create_event', // ← coincide con la función ESM que te pasé
+    createEvent: '/.netlify/functions/create_event',
   }
 }
 
@@ -15,12 +15,12 @@ function parseLocalDate(iso){ const [y,m,d]=iso.split('-').map(Number); return n
 function prettyDate(date){ return new Intl.DateTimeFormat('es-CL',{dateStyle:'full'}).format(date) }
 function encode(data){ return new URLSearchParams(data).toString() }
 
-// Próximos 4 domingos (incluye hoy si es domingo y aún hay horas por delante)
+// Próximos 4 domingos
 function nextFourSundays(){
   const now = new Date()
   const base = new Date(now.getFullYear(), now.getMonth(), now.getDate())
   const sundays = []
-  const day = base.getDay() // 0=domingo
+  const day = base.getDay()
   const isTodaySundayUsable = day === 0 && now.getHours() < 16
   const daysToNextSunday = (7 - day) % 7 || 7
   const firstSunday = isTodaySundayUsable ? base : new Date(base.getTime() + daysToNextSunday*86400000)
@@ -32,7 +32,7 @@ function nextFourSundays(){
   return sundays
 }
 
-// Slots de 30 min entre 09:00 y 17:00 (incluye 17:00)
+// Slots de 30 min entre 09:00 y 17:00
 function daySlots30m(){
   const out = []
   let h = 9, m = 0
@@ -45,7 +45,6 @@ function daySlots30m(){
 }
 
 export default function App(){
-  // ---------- State ----------
   const [dates, setDates] = useState([])
   const [selectedDateISO,setSelectedDateISO]=useState('')
   const [selectedSlot,setSelectedSlot]=useState('')
@@ -56,12 +55,10 @@ export default function App(){
   const [submitting,setSubmitting]=useState(false)
   const [toast,setToast]=useState({ type:'', msg:'' })
 
-  // ---------- Derived ----------
   useEffect(() => { setDates(nextFourSundays()) }, [])
   const baseSlots = useMemo(() => daySlots30m(), [])
   const selectedDate = useMemo(()=>selectedDateISO?parseLocalDate(selectedDateISO):null,[selectedDateISO])
 
-  // Paso actual para barra de progreso
   const step = useMemo(()=> selectedDateISO ? (selectedSlot ? 3 : 2) : 1, [selectedDateISO, selectedSlot])
   useEffect(()=>{
     const el = document.getElementById('progress-bar')
@@ -76,7 +73,7 @@ export default function App(){
     form.celular.trim() && form.direccion.trim()
   )
 
-  // ---------- Cargar disponibilidad al elegir fecha ----------
+  // Cargar disponibilidad al elegir fecha
   useEffect(() => {
     if (!selectedDateISO) return
     setLoadingAvail(true)
@@ -85,7 +82,7 @@ export default function App(){
     const params = new URLSearchParams({
       date: selectedDateISO,
       tz: CONFIG.timezone,
-      mode: 'created-only',                 // ← bloquea exactamente lo tomado por tu app
+      mode: 'created-only',
       slots: baseSlots.join(',')
     })
     fetch(`${CONFIG.endpoints.availability}?${params.toString()}`)
@@ -98,7 +95,7 @@ export default function App(){
       .finally(() => setLoadingAvail(false))
   }, [selectedDateISO, baseSlots])
 
-  // ---------- Submit ----------
+  // Submit: 1) Calendar OK -> 2) Netlify Forms (para notificación por email)
   async function handleSubmit(e){
     e.preventDefault()
     if(!canSubmit || submitting || loadingAvail) return
@@ -106,20 +103,7 @@ export default function App(){
     setToast({ type:'', msg:'' })
 
     try{
-      // 1) Netlify Forms (respaldo)
-      const payload = {
-        'form-name':'agendador','bot-field':'',
-        nombre:form.nombre,apellido:form.apellido,email:form.email,celular:form.celular,direccion:form.direccion,comentarios:form.comentarios,
-        fecha:selectedDateISO,hora:selectedSlot,tz:CONFIG.timezone
-      }
-      const r1 = await fetch('/',{
-        method:'POST',
-        headers:{'Content-Type':'application/x-www-form-urlencoded'},
-        body:encode(payload)
-      })
-      if(!r1.ok) throw new Error('No se pudo guardar el formulario')
-
-      // 2) Calendar (usa tu función create_event ESM con TZ correcto y slot_key)
+      // 1) Google Calendar
       const r2 = await fetch(CONFIG.endpoints.createEvent,{
         method:'POST', headers:{'Content-Type':'application/json'},
         body: JSON.stringify({
@@ -132,6 +116,23 @@ export default function App(){
         throw new Error('No se pudo crear el evento en Calendar. '+detail)
       }
       await r2.json()
+
+      // 2) Netlify Forms (se envía DESPUÉS para que la notificación solo salga si Calendar fue OK)
+      const payload = {
+        'form-name':'agendador','bot-field':'',
+        nombre:form.nombre,apellido:form.apellido,email:form.email,celular:form.celular,direccion:form.direccion,comentarios:form.comentarios,
+        fecha:selectedDateISO,hora:selectedSlot,tz:CONFIG.timezone
+      }
+      // Este POST dispara la notificación por email configurada en Netlify Forms.
+      const r1 = await fetch('/',{
+        method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:encode(payload)
+      })
+      if(!r1.ok){
+        // No rompemos el flujo si falla la notificación; dejamos agendado igualmente
+        console.warn('Netlify Forms falló, pero Calendar fue OK')
+      }
 
       // 3) Redirección a confirmación
       const qs = new URLSearchParams({ date: selectedDateISO, time: selectedSlot, email: form.email })
@@ -183,7 +184,7 @@ export default function App(){
             style={loadingAvail ? { opacity:.6, pointerEvents:'none', cursor:'progress' } : {}}
           >
             {baseSlots.map(slot=>{
-              const isFree = availability[slot] !== false // por defecto libre hasta recibir data
+              const isFree = availability[slot] !== false
               const active = selectedSlot===slot
               const disabled = loadingAvail || !isFree
               return (
