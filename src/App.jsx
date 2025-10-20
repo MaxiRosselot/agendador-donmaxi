@@ -48,8 +48,9 @@ export default function App(){
   const [dates, setDates] = useState([])
   const [selectedDateISO,setSelectedDateISO]=useState('')
   const [selectedSlot,setSelectedSlot]=useState('')
-  const [availability, setAvailability] = useState({})
+  const [availability, setAvailability] = useState(null) // null = aún no cargado
   const [loadingAvail, setLoadingAvail] = useState(false)
+  const [availError, setAvailError] = useState('')
 
   const [form,setForm]=useState({nombre:'',apellido:'',email:'',celular:'',direccion:'',comentarios:''})
   const [submitting,setSubmitting]=useState(false)
@@ -73,29 +74,45 @@ export default function App(){
     form.celular.trim() && form.direccion.trim()
   )
 
-  // Cargar disponibilidad al elegir fecha
+  // ----------- DISPONIBILIDAD -----------
   useEffect(() => {
     if (!selectedDateISO) return
+    const controller = new AbortController()
     setLoadingAvail(true)
-    setAvailability({})
+    setAvailError('')
+    setAvailability(null)
     setSelectedSlot('')
+
     const params = new URLSearchParams({
       date: selectedDateISO,
       tz: CONFIG.timezone,
       mode: 'created-only',
       slots: baseSlots.join(',')
     })
-    fetch(`${CONFIG.endpoints.availability}?${params.toString()}`)
+
+    const url = `${CONFIG.endpoints.availability}?${params.toString()}&v=${Date.now()}`
+    fetch(url, { signal: controller.signal, cache: 'no-store' })
       .then(r => r.json())
       .then(data => {
-        if (data?.ok && data.availability) setAvailability(data.availability)
-        else setAvailability({})
+        if (data?.ok && data.availability) {
+          setAvailability(data.availability)
+        } else {
+          setAvailError('No se pudo cargar la disponibilidad.')
+          setAvailability({})
+        }
       })
-      .catch(() => setAvailability({}))
+      .catch(err => {
+        if (err.name !== 'AbortError') {
+          setAvailError('Error al obtener la disponibilidad.')
+          setAvailability({})
+        }
+      })
       .finally(() => setLoadingAvail(false))
+
+    return () => controller.abort()
   }, [selectedDateISO, baseSlots])
 
-  // Submit: 1) Calendar OK -> 2) Netlify Forms (para notificación por email)
+  // ----------- ENVÍO DE FORMULARIO -----------
   async function handleSubmit(e){
     e.preventDefault()
     if(!canSubmit || submitting || loadingAvail) return
@@ -103,6 +120,16 @@ export default function App(){
     setToast({ type:'', msg:'' })
 
     try{
+      // Revalida el slot antes de enviar
+      const checkParams = new URLSearchParams({
+        date: selectedDateISO, tz: CONFIG.timezone, mode: 'created-only', slots: selectedSlot
+      })
+      const check = await fetch(`${CONFIG.endpoints.availability}?${checkParams}&v=${Date.now()}`, { cache:'no-store' })
+      const j = await check.json()
+      if (!j?.ok || j.availability?.[selectedSlot] !== true) {
+        throw new Error('El horario seleccionado ya no está disponible.')
+      }
+
       // 1) Google Calendar
       const r2 = await fetch(CONFIG.endpoints.createEvent,{
         method:'POST', headers:{'Content-Type':'application/json'},
@@ -115,34 +142,28 @@ export default function App(){
         const detail = await r2.text().catch(()=> '')
         throw new Error('No se pudo crear el evento en Calendar. '+detail)
       }
-      await r2.json()
 
-      // 2) Netlify Forms (se envía DESPUÉS para que la notificación solo salga si Calendar fue OK)
+      // 2) Netlify Forms (solo si Calendar fue OK)
       const payload = {
         'form-name':'agendador','bot-field':'',
-        nombre:form.nombre,apellido:form.apellido,email:form.email,celular:form.celular,direccion:form.direccion,comentarios:form.comentarios,
+        nombre:form.nombre,apellido:form.apellido,email:form.email,celular:form.celular,
+        direccion:form.direccion,comentarios:form.comentarios,
         fecha:selectedDateISO,hora:selectedSlot,tz:CONFIG.timezone
       }
-      // Este POST dispara la notificación por email configurada en Netlify Forms.
-      const r1 = await fetch('/',{
+      await fetch('/',{
         method:'POST',
         headers:{'Content-Type':'application/x-www-form-urlencoded'},
         body:encode(payload)
-      })
-      if(!r1.ok){
-        // No rompemos el flujo si falla la notificación; dejamos agendado igualmente
-        console.warn('Netlify Forms falló, pero Calendar fue OK')
-      }
+      }).catch(()=> console.warn('Netlify Forms falló, pero Calendar fue OK'))
 
-      // 3) Redirección a confirmación
+      // 3) Redirección
       const qs = new URLSearchParams({ date: selectedDateISO, time: selectedSlot, email: form.email })
       const confirmUrl = `${window.location.origin}/confirm.html?${qs.toString()}`
       window.location.replace(confirmUrl)
-
       setToast({ type:'ok', msg:'¡Agendado! Redirigiendo…' })
     }catch(err){
       console.error(err)
-      setToast({ type:'err', msg:'Ocurrió un error al agendar. Intenta nuevamente.' })
+      setToast({ type:'err', msg: err.message || 'Ocurrió un error al agendar.' })
     }finally{ setSubmitting(false) }
   }
 
@@ -162,7 +183,7 @@ export default function App(){
                 type="button"
                 className={`date-btn ${active?'active':''}`}
                 aria-pressed={active}
-                onClick={()=>{ setSelectedDateISO(date) }}
+                onClick={()=> setSelectedDateISO(date)}
               >{label}</button>
             )
           })}
@@ -173,8 +194,15 @@ export default function App(){
       {selectedDate && (
         <section aria-labelledby="tit-horas" style={{ marginTop: 8 }}>
           <h2 id="tit-horas" className="section-title">
-            ⏰ Horarios para {prettyDate(selectedDate)}{loadingAvail ? ' — verificando…' : ''}
+            ⏰ Horarios para {prettyDate(selectedDate)}
+            {loadingAvail ? ' — verificando…' : ''}
           </h2>
+
+          {availError && (
+            <p className="note" role="alert" style={{ color:'#b91c1c' }}>
+              {availError}
+            </p>
+          )}
 
           <div
             className="slots"
@@ -184,9 +212,9 @@ export default function App(){
             style={loadingAvail ? { opacity:.6, pointerEvents:'none', cursor:'progress' } : {}}
           >
             {baseSlots.map(slot=>{
-              const isFree = availability[slot] !== false
+              const isFree = availability?.[slot] === true
               const active = selectedSlot===slot
-              const disabled = loadingAvail || !isFree
+              const disabled = loadingAvail || !isFree || !!availError
               return (
                 <button
                   key={slot}
@@ -197,7 +225,6 @@ export default function App(){
                   disabled={disabled}
                   onClick={()=> !disabled && setSelectedSlot(slot)}
                   title={loadingAvail ? 'Verificando…' : (isFree ? 'Disponible' : 'No disponible')}
-                  style={loadingAvail ? { cursor:'progress' } : {}}
                 >
                   {slot}
                 </button>
@@ -219,30 +246,12 @@ export default function App(){
           <h2 id="tit-datos" className="section-title">🧾 Tus datos</h2>
           <form onSubmit={handleSubmit} noValidate>
             <div className="grid">
-              <div>
-                <label htmlFor="f-nombre">Nombre</label>
-                <input id="f-nombre" value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})} autoComplete="given-name" required />
-              </div>
-              <div>
-                <label htmlFor="f-apellido">Apellido</label>
-                <input id="f-apellido" value={form.apellido} onChange={e=>setForm({...form,apellido:e.target.value})} autoComplete="family-name" required />
-              </div>
-              <div>
-                <label htmlFor="f-email">Correo</label>
-                <input id="f-email" type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} autoComplete="email" inputMode="email" required />
-              </div>
-              <div>
-                <label htmlFor="f-cel">Celular</label>
-                <input id="f-cel" type="tel" value={form.celular} onChange={e=>setForm({...form,celular:e.target.value})} autoComplete="tel" inputMode="tel" placeholder="+56 9 xxxx xxxx" required />
-              </div>
-              <div>
-                <label htmlFor="f-dir">Dirección</label>
-                <input id="f-dir" value={form.direccion} onChange={e=>setForm({...form,direccion:e.target.value})} autoComplete="street-address" required />
-              </div>
-              <div>
-                <label htmlFor="f-notes">Comentarios</label>
-                <input id="f-notes" value={form.comentarios} onChange={e=>setForm({...form,comentarios:e.target.value})} placeholder="Opcional" />
-              </div>
+              <div><label>Nombre</label><input value={form.nombre} onChange={e=>setForm({...form,nombre:e.target.value})} required /></div>
+              <div><label>Apellido</label><input value={form.apellido} onChange={e=>setForm({...form,apellido:e.target.value})} required /></div>
+              <div><label>Correo</label><input type="email" value={form.email} onChange={e=>setForm({...form,email:e.target.value})} required /></div>
+              <div><label>Celular</label><input type="tel" value={form.celular} onChange={e=>setForm({...form,celular:e.target.value})} required /></div>
+              <div><label>Dirección</label><input value={form.direccion} onChange={e=>setForm({...form,direccion:e.target.value})} required /></div>
+              <div><label>Comentarios</label><input value={form.comentarios} onChange={e=>setForm({...form,comentarios:e.target.value})} placeholder="Opcional" /></div>
             </div>
 
             <div style={{ marginTop: 14 }}>
@@ -256,12 +265,12 @@ export default function App(){
               </button>
               <p className="note">
                 Al agendar recibirás una invitación directamente en tu correo.
-                Por favor asegúrate de haberlo escrito correctamente antes de confirmar.
+                Por favor asegúrate de haberlo escrito correctamente.
               </p>
             </div>
 
-            {toast.type==='ok' && (<div className="toast ok" role="status" aria-live="polite" style={{ display:'block' }}>✅ {toast.msg}</div>)}
-            {toast.type==='err' && (<div className="toast err" role="alert" aria-live="assertive" style={{ display:'block' }}>❌ {toast.msg}</div>)}
+            {toast.type==='ok' && (<div className="toast ok" role="status">✅ {toast.msg}</div>)}
+            {toast.type==='err' && (<div className="toast err" role="alert">❌ {toast.msg}</div>)}
           </form>
         </section>
       )}
